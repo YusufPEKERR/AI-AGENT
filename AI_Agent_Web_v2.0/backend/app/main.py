@@ -123,9 +123,9 @@ async def handle_chat_message(sid, data):
         db.close()
 
     # Reconstruct full conversation history from DB for this session
-    sys_prompt = "Sen OpenPlexus — Yusuf PEKER tarafından geliştirilen açık kaynak kodlu AI SysAdmin & DevSecOps Ajanısın (https://github.com/YusufPEKERR/AI-AGENT). Kullanıcı sorularına profesyonel, detaylı ve Türkçe yanıtlar verirsin. Kullanıcı basit bir selamlama veya genel bir soru sorduğunda doğrudan Türkçe olarak yanıt ver, gereksiz dosya taraması veya araç çalıştırma yapma."
+    sys_prompt = "Sen OpenPlexus — Yusuf PEKER tarafından geliştirilen açık kaynak kodlu AI SysAdmin & DevSecOps Ajanısın (https://github.com/YusufPEKERR/AI-AGENT). Kullanıcı sorularına profesyonel, detaylı ve Türkçe yanıtlar verirsin."
     if workspace and workspace != ".":
-        sys_prompt += f"\nKullanıcının aktif çalışma dizini: {workspace}"
+        sys_prompt += f"\nÖNEMLİ: Kullanıcının şu an üzerinde çalıştığı/görüntülediği aktif dizin (workspace) şudur: {workspace}\nEğer dosya okuma veya dizin listeleme aracı kullanacaksan, öncelikli olarak bu mutlak yolu kullanmalısın."
 
     history = [{"role": "system", "content": sys_prompt}]
     

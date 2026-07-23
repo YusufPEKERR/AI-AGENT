@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { TabType, SocketStatus, Message, Tool, SystemMetrics, FileNode } from '../types';
 import { Session } from '../types/session';
 import { apiService } from '../services/api';
-import { useAuthStore } from './useAuthStore';
 
 interface AppState {
   activeTab: TabType;
@@ -127,14 +126,13 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   fetchSessions: async () => {
     try {
-      const username = useAuthStore.getState().username || undefined;
       const storedId = localStorage.getItem('activeSessionId');
       if (storedId) {
         // Pre-fetch messages for the stored active session immediately
         get().setActiveSessionId(storedId);
       }
 
-      const sessions = await apiService.getSessions(username);
+      const sessions = await apiService.getSessions();
       set({ sessions });
 
       let currentId = get().activeSessionId || localStorage.getItem('activeSessionId');
@@ -155,8 +153,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     localStorage.setItem('activeSessionId', id);
     set({ activeSessionId: id });
     try {
-      const username = useAuthStore.getState().username || undefined;
-      const msgs = await apiService.getSessionMessages(id, username);
+      const msgs = await apiService.getSessionMessages(id);
       if (msgs.length === 0) {
         set({ messages: [DEFAULT_WELCOME_MSG] });
       } else {
@@ -169,8 +166,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   createNewSession: async () => {
     try {
-      const username = useAuthStore.getState().username || undefined;
-      const newSess = await apiService.createSession('Yeni Sohbet', username);
+      const newSess = await apiService.createSession('Yeni Sohbet');
       const sessions = [newSess, ...get().sessions];
       set({ sessions, activeSessionId: newSess.id, messages: [DEFAULT_WELCOME_MSG] });
       localStorage.setItem('activeSessionId', newSess.id);
@@ -181,8 +177,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   deleteSession: async (id: string) => {
     try {
-      const username = useAuthStore.getState().username || undefined;
-      await apiService.deleteSession(id, username);
+      await apiService.deleteSession(id);
       const remaining = get().sessions.filter(s => s.id !== id);
       set({ sessions: remaining });
       if (get().activeSessionId === id) {
@@ -199,8 +194,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   updateSessionTitle: async (id: string, newTitle: string) => {
     try {
-      const username = useAuthStore.getState().username || undefined;
-      const updated = await apiService.updateSessionTitle(id, newTitle, username);
+      const updated = await apiService.updateSessionTitle(id, newTitle);
       set((state) => ({
         sessions: state.sessions.map((s) => (s.id === id ? { ...s, title: updated.title } : s))
       }));

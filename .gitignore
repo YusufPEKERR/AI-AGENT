@@ -98,8 +98,6 @@ venv.bak/
 _temp_agent.patch
 *.patch
 node_modules/
-.DS_Store
+*.db
 dist/
-dist-ssr/
-*.local
-app_data.db
+.DS_Store

@@ -1,11 +1,9 @@
 import React from 'react';
-import { Bot, Cpu, ShieldCheck, Zap, Server, LogOut, User } from 'lucide-react';
+import { Bot, Cpu, ShieldCheck, Zap, Server } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
-import { useAuthStore } from '../../store/useAuthStore';
 
 export const Header: React.FC = () => {
   const { socketStatus, activeModel, setActiveModel } = useAppStore();
-  const { username, logout } = useAuthStore();
 
   return (
     <header className="h-16 shrink-0 border-b border-slate-800/80 glass-panel px-6 flex items-center justify-between z-20 sticky top-0">
@@ -68,26 +66,6 @@ export const Header: React.FC = () => {
               : 'bg-rose-400'
           }`} />
           <span className="capitalize">{socketStatus}</span>
-        </div>
-
-        {/* Divider */}
-        <div className="w-px h-6 bg-slate-700/60" />
-
-        {/* User & Logout */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900/60 border border-slate-800 text-xs text-slate-300">
-            <User className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="font-medium text-slate-200">{username}</span>
-          </div>
-          <button
-            id="logout-btn"
-            onClick={logout}
-            title="Çıkış Yap"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-950/40 border border-rose-800/40 text-rose-400 text-xs font-medium hover:bg-rose-900/50 hover:border-rose-600/50 transition-all duration-200"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Çıkış</span>
-          </button>
         </div>
       </div>
     </header>

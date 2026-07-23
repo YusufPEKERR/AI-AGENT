@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FolderTree, FileText, Folder, Terminal, Code2, RefreshCw, FolderOpen } from 'lucide-react';
 import { FileNode } from '../../types';
-import { API_BASE_URL } from '../../services/api';
 
 export const WorkspaceExplorer: React.FC = () => {
   const [currentPath, setCurrentPath] = useState<string>(() => {
@@ -17,7 +16,7 @@ export const WorkspaceExplorer: React.FC = () => {
   }, [currentPath]);
 
   const fetchWorkspace = () => {
-    fetch(`${API_BASE_URL}/tools/execute`, {
+    fetch('http://localhost:8000/api/tools/execute', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tool_id: 'list_dir', arguments: { DirectoryPath: currentPath } })
@@ -63,7 +62,7 @@ export const WorkspaceExplorer: React.FC = () => {
     
     const absolutePath = currentPath === '.' ? file.name : `${currentPath}/${file.name}`;
 
-    fetch(`${API_BASE_URL}/tools/execute`, {
+    fetch('http://localhost:8000/api/tools/execute', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tool_id: 'view_file', arguments: { AbsolutePath: absolutePath } })

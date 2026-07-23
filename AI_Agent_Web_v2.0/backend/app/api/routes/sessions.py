@@ -1,6 +1,6 @@
 import uuid
-from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query
+from typing import List
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.session import SessionModel
@@ -12,24 +12,14 @@ router = APIRouter(prefix="/api/sessions", tags=["sessions"])
 
 
 @router.get("", response_model=List[SessionResponse])
-def get_sessions(
-    username: Optional[str] = Query(None),
-    db: Session = Depends(get_db)
-):
-    query = db.query(SessionModel)
-    if username:
-        query = query.filter(SessionModel.username == username)
-    return query.order_by(SessionModel.updated_at.desc()).all()
+def get_sessions(db: Session = Depends(get_db)):
+    return db.query(SessionModel).order_by(SessionModel.updated_at.desc()).all()
 
 
 @router.post("", response_model=SessionResponse)
 def create_session(data: SessionCreate, db: Session = Depends(get_db)):
     sid = str(uuid.uuid4())
-    sess = SessionModel(
-        id=sid,
-        title=data.title or "Yeni Sohbet",
-        username=data.username
-    )
+    sess = SessionModel(id=sid, title=data.title or "Yeni Sohbet")
     db.add(sess)
     db.commit()
     db.refresh(sess)
@@ -37,36 +27,21 @@ def create_session(data: SessionCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/{session_id}/messages", response_model=List[MessageResponse])
-def get_session_messages(
-    session_id: str,
-    username: Optional[str] = Query(None),
-    db: Session = Depends(get_db)
-):
-    query = db.query(SessionModel).filter(SessionModel.id == session_id)
-    if username:
-        query = query.filter(SessionModel.username == username)
-    sess = query.first()
+def get_session_messages(session_id: str, db: Session = Depends(get_db)):
+    sess = db.query(SessionModel).filter(SessionModel.id == session_id).first()
     if not sess:
         raise HTTPException(status_code=404, detail="Session not found")
-    messages = db.query(MessageModel).filter(
-        MessageModel.session_id == session_id
-    ).order_by(MessageModel.created_at.asc()).all()
+    messages = db.query(MessageModel).filter(MessageModel.session_id == session_id).order_by(MessageModel.created_at.asc()).all()
     return messages
 
 
 @router.delete("/{session_id}")
-def delete_session(
-    session_id: str,
-    username: Optional[str] = Query(None),
-    db: Session = Depends(get_db)
-):
-    query = db.query(SessionModel).filter(SessionModel.id == session_id)
-    if username:
-        query = query.filter(SessionModel.username == username)
-    sess = query.first()
+def delete_session(session_id: str, db: Session = Depends(get_db)):
+    sess = db.query(SessionModel).filter(SessionModel.id == session_id).first()
     if not sess:
         raise HTTPException(status_code=404, detail="Session not found")
-
+    
+    # Delete associated messages
     db.query(MessageModel).filter(MessageModel.session_id == session_id).delete()
     db.delete(sess)
     db.commit()
@@ -74,16 +49,8 @@ def delete_session(
 
 
 @router.put("/{session_id}", response_model=SessionResponse)
-def update_session(
-    session_id: str,
-    data: SessionCreate,
-    username: Optional[str] = Query(None),
-    db: Session = Depends(get_db)
-):
-    query = db.query(SessionModel).filter(SessionModel.id == session_id)
-    if username:
-        query = query.filter(SessionModel.username == username)
-    sess = query.first()
+def update_session(session_id: str, data: SessionCreate, db: Session = Depends(get_db)):
+    sess = db.query(SessionModel).filter(SessionModel.id == session_id).first()
     if not sess:
         raise HTTPException(status_code=404, detail="Session not found")
     if data.title:
@@ -91,3 +58,5 @@ def update_session(
     db.commit()
     db.refresh(sess)
     return sess
+
+

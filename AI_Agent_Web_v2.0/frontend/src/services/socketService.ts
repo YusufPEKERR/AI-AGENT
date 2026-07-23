@@ -1,6 +1,5 @@
 import { io, Socket } from 'socket.io-client';
 import { useAppStore } from '../store/useAppStore';
-import { BACKEND_URL } from './api';
 
 class SocketService {
   private socket: Socket | null = null;
@@ -10,7 +9,7 @@ class SocketService {
 
     useAppStore.getState().setSocketStatus('connecting');
 
-    this.socket = io(BACKEND_URL, {
+    this.socket = io('http://localhost:8000', {
       path: '/ws/socket.io',
       transports: ['websocket', 'polling'],
       reconnectionAttempts: 10,

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Cpu, HardDrive, Server, ShieldCheck, Activity, RefreshCw, AlertTriangle, CheckCircle } from 'lucide-react';
 import { SystemMetrics } from '../../types';
-import { API_BASE_URL } from '../../services/api';
 
 export const SystemMonitor: React.FC = () => {
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
@@ -9,12 +8,12 @@ export const SystemMonitor: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   const fetchMetrics = () => {
-    fetch(`${API_BASE_URL}/system/metrics`)
+    fetch('http://localhost:8000/api/system/metrics')
       .then(res => res.json())
       .then(data => setMetrics(data))
       .catch(err => console.error('Metrics fetch error:', err));
 
-    fetch(`${API_BASE_URL}/system/doctor`)
+    fetch('http://localhost:8000/api/system/doctor')
       .then(res => res.json())
       .then(data => setDoctorData(data))
       .catch(err => console.error('Doctor fetch error:', err))

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Search, Wrench, Play, CheckCircle, AlertCircle, Cpu, Shield, Folder, Globe, Bot } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { Tool } from '../../types';
-import { API_BASE_URL } from '../../services/api';
 
 export const ToolCatalog: React.FC = () => {
   const { tools, setTools } = useAppStore();
@@ -15,7 +14,7 @@ export const ToolCatalog: React.FC = () => {
 
   useEffect(() => {
     // Fetch tool catalog from REST endpoint
-    fetch(`${API_BASE_URL}/tools/`)
+    fetch('http://localhost:8000/api/tools/')
       .then(res => res.json())
       .then(data => {
         if (data.tools) setTools(data.tools);
@@ -75,7 +74,7 @@ export const ToolCatalog: React.FC = () => {
     setExecutionResult(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/tools/execute`, {
+      const response = await fetch('http://localhost:8000/api/tools/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
