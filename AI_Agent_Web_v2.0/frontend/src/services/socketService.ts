@@ -1,6 +1,13 @@
 import { io, Socket } from 'socket.io-client';
 import { useAppStore } from '../store/useAppStore';
 
+const getBackendUrl = () => {
+  // Uzaktan erisimde (port 80 degilse ISP engelliyor olabilir, port 8000'i direk kullan)
+  const host = window.location.hostname;
+  const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+  return `${protocol}//${host}:8000`;
+};
+
 class SocketService {
   private socket: Socket | null = null;
 
@@ -9,13 +16,18 @@ class SocketService {
 
     useAppStore.getState().setSocketStatus('connecting');
 
-    this.socket = io('http://localhost:8000', {
+    const backendUrl = getBackendUrl();
+    console.log('Connecting to backend WebSocket at:', backendUrl);
+    const token = localStorage.getItem('token');
+    this.socket = io(backendUrl, {
       path: '/ws/socket.io',
       transports: ['websocket', 'polling'],
       reconnectionAttempts: 10,
-      reconnectionDelay: 1000
+      reconnectionDelay: 1000,
+      auth: {
+        token
+      }
     });
-
     this.socket.on('connect', () => {
       console.log('Connected to backend WebSocket:', this.socket?.id);
       useAppStore.getState().setSocketStatus('connected');

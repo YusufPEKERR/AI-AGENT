@@ -3,7 +3,7 @@ import { Bot, Cpu, ShieldCheck, Zap, Server } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 
 export const Header: React.FC = () => {
-  const { socketStatus, activeModel, setActiveModel } = useAppStore();
+  const { socketStatus, activeModel, setActiveModel, user, logout } = useAppStore();
 
   return (
     <header className="h-16 shrink-0 border-b border-slate-800/80 glass-panel px-6 flex items-center justify-between z-20 sticky top-0">
@@ -67,6 +67,22 @@ export const Header: React.FC = () => {
           }`} />
           <span className="capitalize">{socketStatus}</span>
         </div>
+
+        {/* User Info & Logout Button */}
+        {user && (
+          <div className="flex items-center gap-3 pl-3 border-l border-slate-800">
+            <div className="flex flex-col items-end hidden sm:flex">
+              <span className="text-xs font-semibold text-slate-200">{user.username}</span>
+              <span className="text-[9px] text-slate-500">Oturum Açık</span>
+            </div>
+            <button
+              onClick={logout}
+              className="px-2.5 py-1 text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/80 rounded-lg border border-slate-800/85 transition-all"
+            >
+              Çıkış
+            </button>
+          </div>
+        )}
       </div>
     </header>
   );

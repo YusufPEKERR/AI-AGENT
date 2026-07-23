@@ -17,6 +17,12 @@ interface AppState {
   selectedFile: FileNode | null;
   activeModel: string;
 
+  // Auth State & Actions
+  user: { username: string } | null;
+  token: string | null;
+  login: (token: string, username: string) => void;
+  logout: () => void;
+
   setActiveTab: (tab: TabType) => void;
   setSocketStatus: (status: SocketStatus) => void;
   addMessage: (msg: Message) => void;
@@ -61,6 +67,21 @@ export const useAppStore = create<AppState>((set, get) => ({
   workspaceFiles: [],
   selectedFile: null,
   activeModel: 'DeepSeek V4 Pro',
+
+  // Auth initialization
+  user: localStorage.getItem('username') ? { username: localStorage.getItem('username')! } : null,
+  token: localStorage.getItem('token') || null,
+  login: (token, username) => {
+    localStorage.setItem('token', token);
+    localStorage.setItem('username', username);
+    set({ token, user: { username } });
+  },
+  logout: () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    localStorage.removeItem('activeSessionId');
+    set({ token: null, user: null, messages: [DEFAULT_WELCOME_MSG], activeSessionId: null, sessions: [] });
+  },
 
   setActiveTab: (tab) => set({ activeTab: tab }),
   setSocketStatus: (status) => set({ socketStatus: status }),

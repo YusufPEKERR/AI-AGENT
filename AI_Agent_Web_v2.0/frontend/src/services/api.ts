@@ -1,11 +1,24 @@
 import { Session } from '../types/session';
 import { Message } from '../types';
 
-const API_BASE_URL = 'http://localhost:8000/api';
+const getBackendUrl = () => {
+  const host = window.location.hostname;
+  const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+  return `${protocol}//${host}:8000`;
+};
+
+const API_BASE_URL = `${getBackendUrl()}/api`;
+
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token');
+  return token ? { 'Authorization': `Bearer ${token}` } : {};
+};
 
 export const apiService = {
   async getSessions(): Promise<Session[]> {
-    const res = await fetch(`${API_BASE_URL}/sessions`);
+    const res = await fetch(`${API_BASE_URL}/sessions`, {
+      headers: { ...getAuthHeaders() }
+    });
     if (!res.ok) throw new Error('Failed to fetch sessions');
     return res.json();
   },
@@ -13,7 +26,10 @@ export const apiService = {
   async createSession(title: string = 'Yeni Sohbet'): Promise<Session> {
     const res = await fetch(`${API_BASE_URL}/sessions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        ...getAuthHeaders()
+      },
       body: JSON.stringify({ title }),
     });
     if (!res.ok) throw new Error('Failed to create session');
@@ -23,6 +39,7 @@ export const apiService = {
   async deleteSession(sessionId: string): Promise<void> {
     const res = await fetch(`${API_BASE_URL}/sessions/${sessionId}`, {
       method: 'DELETE',
+      headers: { ...getAuthHeaders() }
     });
     if (!res.ok) throw new Error('Failed to delete session');
   },
@@ -30,7 +47,10 @@ export const apiService = {
   async updateSessionTitle(sessionId: string, title: string): Promise<Session> {
     const res = await fetch(`${API_BASE_URL}/sessions/${sessionId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        ...getAuthHeaders()
+      },
       body: JSON.stringify({ title }),
     });
     if (!res.ok) throw new Error('Failed to update session title');
@@ -38,13 +58,15 @@ export const apiService = {
   },
 
   async getSessionMessages(sessionId: string): Promise<Message[]> {
-    const res = await fetch(`${API_BASE_URL}/sessions/${sessionId}/messages`);
+    const res = await fetch(`${API_BASE_URL}/sessions/${sessionId}/messages`, {
+      headers: { ...getAuthHeaders() }
+    });
     if (!res.ok) throw new Error('Failed to fetch session messages');
     const rawMessages = await res.json();
 
     // Map backend database MessageModel array into Frontend Message UI state
     const formattedMessages: Message[] = [];
-    
+
     for (const raw of rawMessages) {
       if (raw.role === 'user') {
         formattedMessages.push({
@@ -95,3 +117,4 @@ export const apiService = {
     return formattedMessages;
   }
 };
+

@@ -8,19 +8,26 @@ import { WorkspaceExplorer } from './components/workspace/WorkspaceExplorer';
 import { WidgetsDashboard } from './components/widgets/WidgetsDashboard';
 import { useAppStore } from './store/useAppStore';
 import { socketService } from './services/socketService';
+import { Login } from './components/auth/Login';
 
 export const App: React.FC = () => {
-  const { activeTab, fetchSessions } = useAppStore();
+  const { activeTab, fetchSessions, token } = useAppStore();
 
   useEffect(() => {
-    // Automatically connect Socket.IO on app mount
-    socketService.connect();
-    fetchSessions();
+    if (token) {
+      // Automatically connect Socket.IO on app mount only if authenticated
+      socketService.connect();
+      fetchSessions();
+    }
 
     return () => {
       socketService.disconnect();
     };
-  }, []);
+  }, [token]);
+
+  if (!token) {
+    return <Login />;
+  }
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-[#090d16] text-slate-100 flex flex-col antialiased selection:bg-cyan-500/30 selection:text-cyan-200">

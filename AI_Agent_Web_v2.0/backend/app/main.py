@@ -17,10 +17,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.database import Base, engine, SessionLocal
 from app.core.config import settings
-from app.api.routes import sessions, tools, system
+from app.api.routes import sessions, tools, system, auth
 from app.core.websocket_manager import sio
 from app.models.session import SessionModel
 from app.models.message import MessageModel
+from app.models.user import UserModel
+from app.core.security import hash_password
 
 # Import real AI agent core modules
 try:
@@ -35,6 +37,25 @@ except Exception as e:
 
 # Initialize Database tables
 Base.metadata.create_all(bind=engine)
+
+# Seed admin user if it doesn't exist
+db = SessionLocal()
+try:
+    admin_user = db.query(UserModel).filter(UserModel.username == "admin").first()
+    if not admin_user:
+        admin_user = UserModel(
+            id=str(uuid.uuid4()),
+            username="admin",
+            password_hash=hash_password("admin"),
+            token=None
+        )
+        db.add(admin_user)
+        db.commit()
+        print("[SEED] Admin kullanıcısı oluşturuldu (kullanıcı adı: admin, şifre: admin).")
+except Exception as e:
+    print(f"Error seeding admin user: {e}")
+finally:
+    db.close()
 
 fastapi_app = FastAPI(
     title="OpenPlexus AI SysAdmin & DevSecOps Engine",
@@ -52,6 +73,7 @@ fastapi_app.add_middleware(
 )
 
 # Include Routers
+fastapi_app.include_router(auth.router)
 fastapi_app.include_router(sessions.router)
 fastapi_app.include_router(tools.router)
 fastapi_app.include_router(system.router)
@@ -71,8 +93,34 @@ def health_check():
 
 
 @sio.event
-async def connect(sid, environ):
-    print(f"Client connected: {sid}")
+async def connect(sid, environ, auth=None):
+    print(f"Client trying to connect: {sid}")
+    token = None
+    if auth and isinstance(auth, dict):
+        token = auth.get("token")
+    if not token:
+        # Check query string
+        from urllib.parse import parse_qs
+        query_string = environ.get("QUERY_STRING", "")
+        params = parse_qs(query_string)
+        token_list = params.get("token")
+        if token_list:
+            token = token_list[0]
+
+    if not token:
+        print(f"Connection rejected: No token provided (sid: {sid})")
+        return False
+
+    db = SessionLocal()
+    user = db.query(UserModel).filter(UserModel.token == token).first()
+    db.close()
+
+    if not user:
+        print(f"Connection rejected: Invalid token (sid: {sid})")
+        return False
+
+    print(f"Client connected successfully: {sid} (User: {user.username})")
+    await sio.save_session(sid, {"user_id": user.id, "username": user.username})
     SESSION_HISTORIES[sid] = [
         {"role": "system", "content": "Sen gelişmiş bir OpenPlexus AI SysAdmin & DevSecOps Ajanısın. Kullanıcı sorularına profesyonel, detaylı ve Türkçe yanıtlar verirsin."}
     ]
@@ -87,6 +135,12 @@ async def disconnect(sid):
 
 @sio.on("chat:message")
 async def handle_chat_message(sid, data):
+    session_data = await sio.get_session(sid)
+    user_id = session_data.get("user_id")
+    if not user_id:
+        print(f"Unauthorized chat message from sid: {sid}")
+        return
+
     content = data.get("content", "").strip()
     session_id = data.get("sessionId") or "default"
     workspace = data.get("workspace", ".")
@@ -96,11 +150,14 @@ async def handle_chat_message(sid, data):
 
     db = SessionLocal()
     try:
-        # Check or create Session in DB
-        db_session = db.query(SessionModel).filter(SessionModel.id == session_id).first()
+        # Check or create Session in DB, ensuring it belongs to this user
+        db_session = db.query(SessionModel).filter(
+            SessionModel.id == session_id,
+            SessionModel.user_id == user_id
+        ).first()
         short_title = content[:35] + ("..." if len(content) > 35 else "")
         if not db_session:
-            db_session = SessionModel(id=session_id, title=short_title)
+            db_session = SessionModel(id=session_id, user_id=user_id, title=short_title)
             db.add(db_session)
             db.commit()
             db.refresh(db_session)
