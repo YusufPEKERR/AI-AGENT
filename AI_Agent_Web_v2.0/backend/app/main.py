@@ -196,9 +196,15 @@ async def handle_chat_message(sid, data):
                         assistant_response += end_msg
                         await sio.emit("chat:token", end_msg, room=sid)
                         
-                    assistant_response += delta.content
-                    await sio.emit("chat:token", delta.content, room=sid)
-                    await asyncio.sleep(0.01)
+                    # Filter out raw think tags if they leak into content
+                    clean_content = delta.content.replace("<think>", "").replace("</think>", "")
+                    if clean_content:
+                        assistant_response += clean_content
+                        await sio.emit("chat:token", clean_content, room=sid)
+                        await asyncio.sleep(0.01)
+
+            # Clean up any remaining tags in the accumulated response
+            assistant_response = assistant_response.replace("<think>", "").replace("</think>", "").strip()
 
             # Handle tool executions if requested by LLM
             if tool_calls_accumulator:

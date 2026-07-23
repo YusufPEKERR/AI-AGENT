@@ -1,6 +1,10 @@
+import os
 from pathlib import Path
+from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# Force loading of local .env file over system environment variables
+load_dotenv(override=True)
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
