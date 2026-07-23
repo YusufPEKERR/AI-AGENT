@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ai_agent_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:///./app_data.db
+      - OPENAI_API_KEY=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
+      - OPENAI_BASE_URL=https://integrate.api.nvidia.com/v1
+      - MODEL_NAME=nvidia/nemotron-3-ultra-550b-a55b
+      - CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+    volumes:
+      - ./backend:/app
+      - backend_data:/app/data
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ai_agent_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+      - VITE_WS_URL=http://localhost:8000
+    depends_on:
+      - backend
+
+volumes:
+  backend_data:
